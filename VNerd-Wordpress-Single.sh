@@ -29,7 +29,7 @@ hostnamectl set-hostname $HOSTNAME
 echo "127.0.0.1   $HOSTNAME" >> /etc/hosts
 
 #INSTALL
-apt install nginx mysql-server php php-pear php-mysql php-gd -y
+apt install nginx mysql-server php php-pear php-mysql php-gd php-fpm -y
 
 # Make public_html & logs
 mkdir -p /var/www/html/$WEBSITE/{public_html,logs,src}
@@ -56,6 +56,75 @@ mysql -uroot -p$DB_PASSWORD -e "CREATE USER '$DBUSER' IDENTIFIED BY '$DBUSER_PAS
 mysql -uroot -p$DB_PASSWORD -e "GRANT ALL PRIVILEGES ON wordpress.* TO '$DBUSER';"
 
 service mysql restart
+
+# Add nginx site
+cat <<END >/etc/nginx/sites-available/$WEBSITE.conf
+server {
+    listen 80;
+    server_name $WEBSITE;
+
+    include snippets/letsencrypt.conf;
+    return 301 https://$WEBSITE$request_uri;
+}
+
+# Redirect WWW -> NON WWW
+server {
+    listen 443 ssl http2;
+    server_name $WEBSITE;
+
+    ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/example.com/chain.pem;
+    include snippets/ssl.conf;
+
+    return 301 https://example.com$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name $WEBSITE;
+
+    root /var/www/html/$WEBSITE/public_html;
+    index index.php;
+
+    # SSL parameters
+    ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/example.com/chain.pem;
+    include snippets/ssl.conf;
+    include snippets/letsencrypt.conf;
+
+    # log files
+    access_log /var/log/nginx/$WEBSITE.access.log;
+    error_log /var/log/nginx/$WEBSITE.error.log;
+
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+    }
+
+    location = /robots.txt {
+        allow all;
+        log_not_found off;
+        access_log off;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.php?$args;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php7.2-fpm.sock;
+    }
+
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+        expires max;
+        log_not_found off;
+    }
+
+}
+END
 
 # making directory for php? giving apache permissions to that log? restarting php
 apt purge apache2 -y
