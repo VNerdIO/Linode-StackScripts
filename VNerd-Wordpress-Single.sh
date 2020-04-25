@@ -20,7 +20,6 @@ ufw allow https
 ufw enable
 
 # updates
-apt purge apache2
 apt update -y
 apt upgrade -y
 apt autoremove -y
@@ -59,6 +58,7 @@ mysql -uroot -p$DB_PASSWORD -e "GRANT ALL PRIVILEGES ON wordpress.* TO '$DBUSER'
 service mysql restart
 
 # making directory for php? giving apache permissions to that log? restarting php
+apt purge apache2 -y
 mkdir /var/log/php
 chown www-data /var/log/php
 systemctl restart nginx
