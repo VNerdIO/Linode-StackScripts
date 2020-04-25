@@ -17,7 +17,7 @@ adduser $SSUSER sudo
 ufw allow ssh
 ufw allow http
 ufw allow https
-ufw enabled
+ufw enable
 
 # updates
 apt update -y
@@ -28,8 +28,8 @@ apt autoremove -y
 hostnamectl set-hostname $HOSTNAME
 echo "127.0.0.1   $HOSTNAME" >> /etc/hosts
 
-#INSTALL APACHE
-apt-get install nginx -y
+#INSTALL
+apt-get install nginx mysql-server php php-pear libapache2-mod-php7.0 php-mysql php-gd -y
 
 # Make public_html & logs
 mkdir -p /var/www/html/$WEBSITE/{public_html,logs,src}
@@ -49,7 +49,6 @@ sudo chown -R www-data:www-data /var/www/html/$WEBSITE/public_html
 # Install MySQL Server in a Non-Interactive mode. Default root password will be "root"
 echo "mysql-server mysql-server/root_password password $DB_PASSWORD" | sudo debconf-set-selections
 echo "mysql-server mysql-server/root_password_again password $DB_PASSWORD" | sudo debconf-set-selections
-apt-get -y install mysql-server
 
 mysql -uroot -p$DB_PASSWORD -e "create database wordpress"
 mysql -uroot -p$DB_PASSWORD -e "CREATE USER '$DBUSER' IDENTIFIED BY '$DBUSER_PASSWORD';
@@ -57,11 +56,8 @@ mysql -uroot -p$DB_PASSWORD -e "CREATE USER '$DBUSER' IDENTIFIED BY '$DBUSER_PAS
 mysql -uroot -p$DB_PASSWORD -e "GRANT ALL PRIVILEGES ON wordpress.* TO '$DBUSER';"
 
 service mysql restart
- 
-#installing php
-apt install php php-pear libapache2-mod-php7.0 php-mysql php-gd -y
 
 # making directory for php? giving apache permissions to that log? restarting php
 mkdir /var/log/php
 chown www-data /var/log/php
-systemctl restart apache2
+systemctl restart nginx
