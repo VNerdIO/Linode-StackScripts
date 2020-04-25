@@ -29,7 +29,7 @@ hostnamectl set-hostname $HOSTNAME
 echo "127.0.0.1   $HOSTNAME" >> /etc/hosts
 
 #INSTALL
-apt-get install nginx mysql-server php php-pear libapache2-mod-php7.0 php-mysql php-gd -y
+apt install nginx mysql-server php php-pear php-mysql php-gd -y
 
 # Make public_html & logs
 mkdir -p /var/www/html/$WEBSITE/{public_html,logs,src}
