@@ -20,6 +20,7 @@ ufw allow https
 ufw enable
 
 # updates
+apt purge apache2
 apt update -y
 apt upgrade -y
 apt autoremove -y
